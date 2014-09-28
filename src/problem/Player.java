@@ -1,0 +1,82 @@
+package problem;
+
+/**
+ * Immutable representation of a player
+ * @author Joshua Song
+ *
+ */
+public class Player  implements Actor {
+	private String id;
+	private Cycle cycle;
+	private GridCell position;
+	private double damageCost;
+	
+	public Player(String id, Cycle cycle, GridCell position, double damageCost) {
+		this.id = id;
+		this.cycle = cycle;
+		this.position = position;
+		this.damageCost = damageCost;
+	}
+	
+	public String getId() {
+		return id;
+	}
+	
+	public GridCell getPosition() {
+		return position;
+	}
+	
+	public Cycle getCycle() {
+		return cycle;
+	}
+	
+	public double getDamageCost() {
+		return damageCost;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((cycle == null) ? 0 : cycle.hashCode());
+		long temp;
+		temp = Double.doubleToLongBits(damageCost);
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + ((id == null) ? 0 : id.hashCode());
+		result = prime * result
+				+ ((position == null) ? 0 : position.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Player other = (Player) obj;
+		if (cycle == null) {
+			if (other.cycle != null)
+				return false;
+		} else if (!cycle.equals(other.cycle))
+			return false;
+		if (Double.doubleToLongBits(damageCost) != Double
+				.doubleToLongBits(other.damageCost))
+			return false;
+		if (id == null) {
+			if (other.id != null)
+				return false;
+		} else if (!id.equals(other.id))
+			return false;
+		if (position == null) {
+			if (other.position != null)
+				return false;
+		} else if (!position.equals(other.position))
+			return false;
+		return true;
+	}
+	
+	
+}
