@@ -9,13 +9,24 @@ public class Player  implements Actor {
 	private String id;
 	private Cycle cycle;
 	private GridCell position;
-	private double damageCost;
+	private double damageCost;	// Damage cost gained this turn
+	private boolean isObstacle;
 	
-	public Player(String id, Cycle cycle, GridCell position, double damageCost) {
+	public Player(String id, Cycle cycle, GridCell position) {
+		this.id = id;
+		this.cycle = cycle;
+		this.position = position;
+		damageCost = 0;
+		isObstacle = false;
+	}
+	
+	public Player(String id, Cycle cycle, GridCell position, double damageCost,
+			boolean isObstacle) {
 		this.id = id;
 		this.cycle = cycle;
 		this.position = position;
 		this.damageCost = damageCost;
+		this.isObstacle = isObstacle;
 	}
 	
 	public String getId() {
@@ -30,8 +41,17 @@ public class Player  implements Actor {
 		return cycle;
 	}
 	
+	/**
+	 * Returns the damage cost received this turn. I.e. if a player received
+	 * damage several turns ago but not in this turn, 0 is returned.
+	 * @return
+	 */
 	public double getDamageCost() {
 		return damageCost;
+	}
+	
+	public boolean isObstacle() {
+		return isObstacle;
 	}
 
 	@Override
@@ -43,6 +63,7 @@ public class Player  implements Actor {
 		temp = Double.doubleToLongBits(damageCost);
 		result = prime * result + (int) (temp ^ (temp >>> 32));
 		result = prime * result + ((id == null) ? 0 : id.hashCode());
+		result = prime * result + (isObstacle ? 1231 : 1237);
 		result = prime * result
 				+ ((position == null) ? 0 : position.hashCode());
 		return result;
@@ -70,6 +91,8 @@ public class Player  implements Actor {
 				return false;
 		} else if (!id.equals(other.id))
 			return false;
+		if (isObstacle != other.isObstacle)
+			return false;
 		if (position == null) {
 			if (other.position != null)
 				return false;
@@ -77,6 +100,4 @@ public class Player  implements Actor {
 			return false;
 		return true;
 	}
-	
-	
 }

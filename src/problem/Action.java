@@ -8,7 +8,9 @@ package problem;
  * NE: north-east
  * SE: south-east
  * ST: stay
+ * TO: turn into an obstacle
+ * TC: turn back into a cycle
  */
 public enum Action {
-	FS, FM, FF, NE, SE, ST
+	FS, FM, FF, NE, SE, ST, TO, TC
 }

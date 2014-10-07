@@ -13,6 +13,7 @@ public class Main {
 
 	public static void main(String[] args) {
 		
+		// Load input files
 		String cycleFile = defaultCycleFile;
 		String metaTrackFile = defaultMetaTrackFile;
 		String outputFile = defaultOutputFile;
@@ -25,8 +26,9 @@ public class Main {
 			metaTrackFile = args[1].trim();
 			outputFile = args[2].trim();
 		}
-		
 		Setup setup = new Setup(cycleFile, metaTrackFile);
+		
+		// Create and solve tour
 		Consultant consultant = new Consultant();
 		Tour tour = new Tour(setup);
 		consultant.solveTour(tour);
@@ -34,6 +36,14 @@ public class Main {
 			tour.outputToFile(outputFile);
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+		
+		// Print times
+		for (int i = 0; i < tour.getNumRaces(); i++) {
+			double ptSeconds = tour.getPrepareTime(i)/1000.0;
+			double stepTime = (double) tour.getRaceTime(i)/tour.getTurnNo(i);
+			System.out.println("Race " + i + " prepare time: " + ptSeconds +
+					" s, average time per step: " + stepTime + " ms.");
 		}
 	}
 

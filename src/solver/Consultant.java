@@ -9,6 +9,7 @@ import problem.Action;
 import problem.Cycle;
 import problem.GridCell;
 import problem.Player;
+import problem.RaceSimTools;
 import problem.RaceState;
 import problem.Tour;
 import problem.Track;
@@ -40,6 +41,12 @@ public class Consultant {
 			}
 		}
 		
+		// Example: register for as many tracks as possible
+		List<Track> allTracks = tour.getTracks();
+		for (Track t : allTracks) {
+			tour.registerTrack(t, 1);
+		}
+		
 		while (!tour.isFinished()) {
 			
 			if (tour.isPreparing()) {
@@ -48,7 +55,7 @@ public class Consultant {
 				// players by choosing their cycles and start positions
 				
 				// Example:
-				Track track = tour.getAvailableTracks().get(0);
+				Track track = tour.getUnracedTracks().get(0);
 				ArrayList<Player> players = new ArrayList<Player>();
 				Map<String, GridCell> startingPositions = 
 						track.getStartingPositions();
@@ -59,7 +66,7 @@ public class Consultant {
 					startPosition = entry.getValue();
 					break;
 				}
-				players.add(new Player(id, cycle, startPosition, 0));
+				players.add(new Player(id, cycle, startPosition));
 				
 				// Start race
 				tour.startRace(track, players);		
@@ -68,10 +75,12 @@ public class Consultant {
 			// Decide on your next action here. tour.getLatestRaceState() 
 			// will probably be helpful.
 			
-			// Example: Output current position of player
+			// Example: Output current position of player, and current state
 			RaceState state = tour.getLatestRaceState();
 			System.out.println("Player position: " + 
 					state.getPlayers().get(0).getPosition());
+			Track track = tour.getCurrentTrack();
+			System.out.println(RaceSimTools.stateToString(state, track));
 			
 			// Example: Keep moving forward slowly
 			ArrayList<Action> actions = new ArrayList<Action>();
