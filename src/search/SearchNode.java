@@ -1,5 +1,6 @@
 package search;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -15,10 +16,13 @@ public class SearchNode {
 	private GridCell cell; // The cell this node represents
 	private Cycle cycle; // The cycle being used for the search
 	private Map<Action, SearchNode> children; // Map of actions to child nodes
+	private Map<Action, Integer> actionVisits; // Times action taken
 	private int visits; // Number of times this node is visited
 	private double totReward; // Total reward from rollouts. Divide by visits
 	private boolean isGoal; // If this node represents a goal state
 	private Track track; // The track this cell is in, used to query the world
+
+	private final double BALANCING_FACTOR = 0.0;
 
 	public SearchNode(GridCell cell, Cycle cycle, Track track) {
 		this.cell = cell;
@@ -27,7 +31,11 @@ public class SearchNode {
 		totReward = 0;
 		visits = 0;
 		isGoal = track.getCellType(cell) == Track.CellType.GOAL;
+		children = new HashMap<Action, SearchNode>();
+		actionVisits = new HashMap<Action, Integer>();
+	}
 
+	public void expand() {
 		// Use the track to work out child nodes for actions
 		GridCell shiftedNE = cell.shifted(Direction.NE);
 		if (!(track.getCellType(shiftedNE) == (Track.CellType.OBSTACLE))) {
@@ -63,49 +71,70 @@ public class SearchNode {
 	}
 
 	public void selectAction() {
+		// Track the visited nodes for backing up rollouts
 		List<SearchNode> visited = new LinkedList<SearchNode>();
-		SearchNode cur = this;
+		SearchNode cur = this; // Current node
 		visited.add(this);
+		// Search down to find a leaf node, always selecting the 'best'
 		while (!cur.isLeaf()) {
 			cur = cur.select();
 			// System.out.println("Adding: " + cur);
 			visited.add(cur);
 		}
 
-		SearchNode newNode = cur.select();
-		visited.add(newNode);
-		double value = rollOut(newNode);
+		double value;
+		// TODO Check if cur is the goal
+		if (cur.isGoal) {
+			// Check if dead end
+			// Set utility to negative value?
+			value = -1;
+			// Else set utility to winnings?
+			value = 1;
+		} else {
+
+			// Otherwise expand the leaf node
+			cur.expand();
+			// Select the best node
+			SearchNode newNode = cur.select();
+			// Add to visited and rollout
+			visited.add(newNode);
+			// TODO value = rollOut(newNode);
+		}
+		// back the value up the tree
 		for (SearchNode node : visited) {
-			// would need extra logic for n-player game
-			// System.out.println(node);
 			node.updateStats(value);
 		}
 	}
 
 	private SearchNode select() {
-		SearchNode selected = null;
+		Action selected = null;
 		double bestValue = Double.MIN_VALUE;
-		for (SearchNode c : children.values()) {
-			double uctValue = c.totReward
-					/ (c.visits)
-					+ // avg total discounted value of runs starting from here
-					/* natural log of times visited / times action taken */Math
-							.sqrt(Math.log(visits + 1) / (c.visits));
-			// small random number to break ties randomly in unexpanded nodes
+
+		// Go over all the possible actions and pick the best one
+		for (Action a : children.keySet()) {
+			SearchNode c = children.get(a);
+			double uctValue =
+			// avg total discounted value of runs starting from here
+			c.totReward / (c.visits) +
+			/* natural log of times visited / times action taken */
+			BALANCING_FACTOR
+					* Math.sqrt(Math.log(c.visits) / (actionVisits.get(a)));
 			// System.out.println("UCT value = " + uctValue);
 			if (uctValue > bestValue) {
-				selected = c;
+				selected = a;
 				bestValue = uctValue;
 			}
 		}
-		// System.out.println("Returning: " + selected);
-		return selected;
+		// Increment the action visits
+		actionVisits.put(selected, actionVisits.get(selected) + 1);
+
+		return children.get(selected);
 	}
-	
+
 	public void updateStats(double value) {
-        visits++;
-        totReward += value;
-    }
+		visits++;
+		totReward += value;
+	}
 
 	public boolean isLeaf() {
 		return isGoal || children.size() == 0;
