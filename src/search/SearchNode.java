@@ -22,7 +22,7 @@ public class SearchNode {
 	private boolean isGoal; // If this node represents a goal state
 	private Track track; // The track this cell is in, used to query the world
 
-	private final double BALANCING_FACTOR = 0.0;
+	private final double BALANCING_FACTOR = 1.0;
 
 	public SearchNode(GridCell cell, Cycle cycle, Track track) {
 		this.cell = cell;
@@ -83,22 +83,24 @@ public class SearchNode {
 		}
 
 		double value;
-		// TODO Check if cur is the goal
+		//Check if cur is the goal
 		if (cur.isGoal) {
-			// Check if dead end
-			// Set utility to negative value?
-			value = -1;
-			// Else set utility to winnings?
-			value = 1;
+			// Set reward to the track prize
+			value = track.getPrize();
 		} else {
-
 			// Otherwise expand the leaf node
 			cur.expand();
-			// Select the best node
-			SearchNode newNode = cur.select();
-			// Add to visited and rollout
-			visited.add(newNode);
-			// TODO value = rollOut(newNode);
+			// Check if cur is a dead end
+			if (cur.isLeaf() && !cur.isGoal) {
+				// Set value to -prize as we can't win from here
+				value = -track.getPrize();
+			} else {
+				// Select the best node
+				SearchNode newNode = cur.select();
+				// Add to visited and rollout
+				visited.add(newNode);
+				value = TrackRollout.rollout(newNode);
+			}
 		}
 		// back the value up the tree
 		for (SearchNode node : visited) {

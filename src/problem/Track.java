@@ -186,7 +186,13 @@ public class Track {
 	}
 	
 	public CellType getCellType(GridCell pos) {
-		return map.get(pos.getRow()).get(pos.getCol());
+		CellType cell = map.get(pos.getRow()).get(pos.getCol());
+		
+		if (cell != null) {
+			return cell;
+		} else {
+			return CellType.OBSTACLE;
+		}
 	}
 	
 	public int getNumRows() {
