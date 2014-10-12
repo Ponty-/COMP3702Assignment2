@@ -35,6 +35,18 @@ public class SearchNode {
 		actionVisits = new HashMap<Action, Integer>();
 	}
 	
+	public GridCell getCell() {
+		return cell;
+	}
+	
+	public Cycle getCycle() {
+		return cycle;
+	}
+	
+	public Track getTrack() {
+		return track;
+	}
+	
 	// Fill this node's children mapping with all possible actions from the node.
 	public void expand() {
 		// Use the track to work out child nodes for actions.
@@ -103,9 +115,11 @@ public class SearchNode {
 			} else {
 				// Select the best node
 				SearchNode newNode = cur.select();
-				// Add to visited and rollout
+				// Add to visited and rollout from it.
 				visited.add(newNode);
-				value = TrackRollout.rollout(newNode);
+				// Returns the estimated through simulation value of this node.
+				TrackRollout tr = new TrackRollout(newNode);
+				value = TrackRollout.rollout();
 			}
 		}
 		// back the value up the tree
