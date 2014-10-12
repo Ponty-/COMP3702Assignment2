@@ -1,0 +1,43 @@
+cycle.txt meta-track.txt
+AutoBikeSturdy 
+stLucia.txt 1 union.txt 1
+stLucia.txt 5 S AutoBikeSturdy
+A0000000
+S0000000
+00010000
+S-0.0-false-FS 
+000a0000
+0[S-A]00b000
+00010000
+S-0.0-false-FS 
+000a0000
+00[S-A]00000
+00010000
+S-0.0-false-FS 
+00000000
+000S[A-b]000
+00010000
+S-0.0-false-FS 
+000a0000
+0000S00A
+00010000
+S-0.0-false 
+75.0
+union.txt 5 S AutoBikeSturdy
+01000
+S0000
+S-0.0-false-FS 
+01000
+0Sb00
+S-0.0-false-FS 
+010a0
+00[S-b]00
+S-10.0-false-FS 
+01000
+000S0
+S-0.0-false-FS 
+010a0
+00b0S
+S-0.0-false 
+150.0
+165.0

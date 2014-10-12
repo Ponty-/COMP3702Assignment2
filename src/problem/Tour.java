@@ -321,6 +321,10 @@ public class Tour {
 			raceTimes.add(System.currentTimeMillis() - timeStamp);
 			timeStamp = System.currentTimeMillis();			
 		}
+		if (isFinished()) {
+			System.out.println("Tour completed!");
+			System.out.println("Profit: $" + (money - setup.getStartupMoney()));
+		}
 	}
 	
 	/**
