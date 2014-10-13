@@ -26,6 +26,21 @@ public class Consultant {
 	 * @param tour
 	 */
 	public void solveTour(Tour tour) {
+		//Work out what races we are participating in.
+		
+		//Loop buy cycle->register for race
+		
+		//Loop - do all the races
+			//Use MCTS to determine best starting position
+			//Loop over actions until goal, using MCTS to pick the best one
+		
+	}
+	
+	/**
+	 * Solves a tour. Replace existing code with your code.
+	 * @param tour
+	 */
+	public void solveTourExample(Tour tour) {
 		
 		// You should get information from the tour using the getters, and
 		// make your plan.
