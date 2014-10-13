@@ -1,6 +1,7 @@
 package solver;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,15 @@ import problem.Track.CellType;
 public class TourPicker {
 	public static Map<Track, Cycle> choose(Tour tour) {
 		// Pick the best 3 races from the tour and the cycles to use on them
+		/* 2 major cases. can get what we want & can't get what we want
+		 case 1: plentiful start money can buy a "perfect" cycle/cycles and register for best 3 races
+		 case 2: 
+		 a. plentiful money sub optimal cycles & cheap races(which of the bad choices is the best)(likely something like speed vs wild)
+		 b. scarce money optimal cycles & expensive races (potential winnings vs quality of cycle)
+		 - pick obstacle/distractor heavy only?
+		 c. scarce money sub optimal cycles & expensive races (seems like a pain to maximize)
+		 - everything is bad wtf is balance
+		*/
 		
 		// Load this with the index of the track we're about to test. Stubbed to 99.
 		Track track = tour.getTrack(99);
@@ -51,19 +61,31 @@ public class TourPicker {
 	}
 	
 	/* ranks tracks based upon expected winnings */
-	public static List<Track> rankTracks(Tour tour) {
-		List<Track> trackOrdering = new ArrayList<Track>();
+	public static Map<Track, double[]> rankTracks(Tour tour) {
+		// Map of tracks and their attributes (weighted prize, obstacle heavy, distractor heavy, opponent heavy)
+		Map<Track, double[]> trackOrdering = new HashMap<Track, double[]>();
 		List<Track> tracks = tour.getTracks();
 		Track currentTrack;
 		int noTracks = tracks.size();
 		double prize = 0;
+		
+		//iterate over the tracks and find their attributes and weighted prize
 		for(int i = 0; i < noTracks; i++) {
 			currentTrack = tracks.get(i);
+			double[] attributes = {0,0,0,0};
 			prize = currentTrack.getPrize();
+			
 			//reduce expected prize based on obstacles
-			prize = prize*(1 - percentObs(currentTrack));
+			//obstacles/cells
+			double obsWeight = percentObs(currentTrack);
+			prize = prize*(1 - obsWeight);
+			attributes[1] = obsWeight;
+			
 			//reduce expected prize based on distractors
-			prize = prize*(1 - currentTrack.getDistractors().size());
+			//distractors/cells
+			double distractorWeight = (currentTrack.getDistractors().size()/(currentTrack.getNumCols()*currentTrack.getNumRows()));
+			prize = prize*(1 - distractorWeight);
+			attributes[2] = distractorWeight;
 			//TODO:add elements and order them
 		}
 		
