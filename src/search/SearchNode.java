@@ -13,21 +13,23 @@ import problem.Action;
 import problem.Track;
 
 public class SearchNode {
-	private GridCell cell; // The cell this node represents
-	private Cycle cycle; // The cycle being used for the search
-	private Map<Action, SearchNode> children; // Map of actions to child nodes
-	private Map<Action, Integer> actionVisits; // Times action taken
-	private int visits; // Number of times this node is visited
-	private double totReward; // Total reward from rollouts. Divide by visits
-	private boolean isGoal; // If this node represents a goal state
-	private Track track; // The track this cell is in, used to query the world
+	private GridCell cell; // The cell this node represents.
+	private Cycle cycle; // The cycle being used for the search.
+	private Map<Action, SearchNode> children; // Map of actions to child nodes.
+	private Map<Action, Integer> actionVisits; // Times action taken.
+	private int visits; // Number of times this node is visited.
+	private double totReward; // Total reward from rollouts. Divide by visits.
+	private boolean isGoal; // If this node represents a goal state.
+	private Track track; // The track this cell is in, used to query the world.
+	private double[][] distractorMatrix; // The distractorMatrix for this track.
 
 	private final double BALANCING_FACTOR = 1.0;
 
-	public SearchNode(GridCell cell, Cycle cycle, Track track) {
+	public SearchNode(GridCell cell, Cycle cycle, Track track, double [][] distractorMatrix) {
 		this.cell = cell;
 		this.cycle = cycle;
 		this.track = track;
+		this.distractorMatrix = distractorMatrix;
 		totReward = 0;
 		visits = 0;
 		isGoal = track.getCellType(cell) == Track.CellType.GOAL;
@@ -47,6 +49,10 @@ public class SearchNode {
 		return track;
 	}
 	
+	public double [][] getDistractorMatrix() {
+		return distractorMatrix;
+	}
+	
 	// Fill this node's children mapping with all possible actions from the node.
 	public void expand() {
 		// Use the track to work out child nodes for actions.
@@ -55,31 +61,31 @@ public class SearchNode {
 		// Wild cycles may pass through obstacles for minor damage.
 		if (!(track.getCellType(shiftedNE) == (Track.CellType.OBSTACLE)) || cycle.isWild()) {
 			// Add it to the children.
-			children.put(Action.NE, new SearchNode(shiftedNE, cycle, track));
+			children.put(Action.NE, new SearchNode(shiftedNE, cycle, track, distractorMatrix));
 		}
 
 		GridCell shiftedSE = cell.shifted(Direction.SE);
 		if (!(track.getCellType(shiftedSE) == (Track.CellType.OBSTACLE)) || cycle.isWild()) {
-			children.put(Action.SE, new SearchNode(shiftedSE, cycle, track));
+			children.put(Action.SE, new SearchNode(shiftedSE, cycle, track, distractorMatrix));
 		}
 
 		// Nested if for moving forwards - if obstacle in the way and not wild, no action
 		GridCell shiftedE = cell.shifted(Direction.E);
 		if (!(track.getCellType(shiftedE) == (Track.CellType.OBSTACLE)) || cycle.isWild()) {
-			children.put(Action.FS, new SearchNode(shiftedE, cycle, track));
+			children.put(Action.FS, new SearchNode(shiftedE, cycle, track, distractorMatrix));
 
 			// If cycle is medium or fast speed try shifting again
 			shiftedE = shiftedE.shifted(Direction.E);
 			if (cycle.getSpeed() == Speed.MEDIUM || cycle.getSpeed() == Speed.FAST) {
 				if (!(track.getCellType(shiftedE) == (Track.CellType.OBSTACLE)) || cycle.isWild()) {
-					children.put(Action.FM, new SearchNode(shiftedE, cycle, track));
+					children.put(Action.FM, new SearchNode(shiftedE, cycle, track, distractorMatrix));
 	
 					// If cycle is fast try shifting again
 					shiftedE = shiftedE.shifted(Direction.E);
 					if (cycle.getSpeed() == Speed.FAST) {
 						if (!(track.getCellType(shiftedE) == (Track.CellType.OBSTACLE)) 
 								|| cycle.isWild()) {
-							children.put(Action.FF, new SearchNode(shiftedE, cycle, track));
+							children.put(Action.FF, new SearchNode(shiftedE, cycle, track, distractorMatrix));
 						}
 					}
 				}
