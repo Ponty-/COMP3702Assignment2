@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import problem.Distractor;
 import problem.GridCell;
 import problem.Track;
 import problem.Cycle;
