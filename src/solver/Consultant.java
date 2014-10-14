@@ -23,7 +23,7 @@ import search.SearchNode;
 public class Consultant {
 
 	// The time to calculate a single step online in nanoseconds
-	private static long STEP_TIME = 1500000000;
+	private static long STEP_TIME = 1000000000;
 	// Badass name for our cycle
 	private static String BADASS_NAME = "Glorious Cycle of Ultimate Destiny";
 
@@ -59,8 +59,15 @@ public class Consultant {
 			for (GridCell pos : startingPositions.values()) {
 				SearchNode node = new SearchNode(pos, races.get(t), t,
 						buildDistractorMatrix(t));
+				
 				// Search
-				node.search();
+				long end = System.nanoTime() + STEP_TIME;
+				// Search for as long as we have
+				// TODO add a stop condition?
+				while (System.nanoTime() < end) {
+					node.search();
+				}
+				
 				// Compare to previous position
 				if (bestNode == null) {
 					bestNode = node;
