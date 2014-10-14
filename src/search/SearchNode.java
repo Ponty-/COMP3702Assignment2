@@ -137,8 +137,10 @@ public class SearchNode {
 				SearchNode newNode = cur.select();
 				// Add to visited and rollout from it.
 				visited.add(newNode);
+				// Instantiate a TrackRollout with the node.
+				TrackRollout tr = new TrackRollout(newNode);
 				// Returns the estimated through simulation value of this node.
-				value = TrackRollout.rollout();
+				value = tr.rollout();
 			}
 		}
 		// back the value up the tree
