@@ -3,8 +3,6 @@ package solver;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
-
 import problem.Action;
 import problem.Cycle;
 import problem.Distractor;
@@ -24,15 +22,16 @@ import search.SearchNode;
  */
 public class Consultant {
 
+	// The time to calculate a single step online in nanoseconds
+	private static long STEP_TIME = 1500000000;
+	// Badass name for our cycle
+	private static String BADASS_NAME = "Glorious Cycle of Ultimate Destiny";
+
 	/**
 	 * Solves a tour. Replace existing code with your code.
 	 * 
 	 * @param tour
 	 */
-	
-	//The time to calculate a single step online in nanoseconds
-	private static long STEP_TIME = 1500000000;
-	
 	public void solveTour(Tour tour) {
 		// Work out what races we are participating in and with what cycles
 		Map<Track, Cycle> races = TourPicker.choose(tour);
@@ -52,7 +51,6 @@ public class Consultant {
 			// Track setup
 			ArrayList<Player> players = new ArrayList<Player>();
 			Map<String, GridCell> startingPositions = t.getStartingPositions();
-			String id = "Glorious Cycle of Ultimate Destiny";
 			double[][] distractorMatrix = buildDistractorMatrix(t);
 
 			// Iterate over starting positions and use MCTS to find the best
@@ -71,31 +69,31 @@ public class Consultant {
 				}
 			}
 			// Add player to track at the best starting position
-			players.add(new Player(id, races.get(t), bestNode.getCell()));
+			players.add(new Player(BADASS_NAME, races.get(t), bestNode
+					.getCell()));
 
 			// Start race
 			tour.startRace(t, players);
 
 			// Race - cue music
 			while (tour.getLatestRaceState().getStatus() == RaceState.Status.RACING) {
-				//Get the current state of the race
+				// Get the current state of the race
 				RaceState currentState = tour.getLatestRaceState();
 				Player us = currentState.getPlayers().get(0);
 				SearchNode root = new SearchNode(us.getPosition(),
 						us.getCycle(), t, distractorMatrix);
-				
-				//Decide what to do next
+
+				// Decide what to do next
 				long end = System.nanoTime() + STEP_TIME;
-				//Search for as long as we have
-				//TODO add a stop condition?
+				// Search for as long as we have
+				// TODO add a stop condition?
 				while (System.nanoTime() < end) {
 					root.search();
 				}
-				//Select the best action and take a step
+				// Select the best action and take a step
 				ArrayList<Action> actions = new ArrayList<Action>();
 				actions.add(root.bestAction());
 				tour.stepTurn(actions);
-				
 			}
 		}
 
