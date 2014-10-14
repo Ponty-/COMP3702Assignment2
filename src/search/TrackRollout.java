@@ -6,6 +6,7 @@ import java.util.Random;
 
 import problem.Action;
 import problem.Cycle;
+import problem.Cycle.Speed;
 import problem.Direction;
 import problem.Distractor;
 import problem.GridCell;
@@ -22,6 +23,9 @@ public class TrackRollout {
 	static private Double DISCOUNT_FACTOR = 1.0;
 	// Rate at which the discount factor reduces thereby lowering the reward.
 	static final private Double DISCOUNT_RATE = 1.0;
+	// The multiplier on the cycles maximum range per step to look ahead for
+	// obstacles, distractors.
+	static final private int LOOK_FACTOR = 3;
 
 	// Reward
 	// Empty cell
@@ -36,8 +40,6 @@ public class TrackRollout {
 	static final private Double OBSTACLE_DOMESTICATED = -50.0;
 
 	// Fields
-	// Random Generator for calculating results of an action.
-	private Random rGen = new Random();
 	// The node the rollout begins from.
 	private SearchNode startNode;
 	// The cell the cycle is occupying from step to step.
@@ -48,10 +50,28 @@ public class TrackRollout {
 	// contains distractor probability.
 	// double arrays are automatically filled with 0.0 on creation.
 	double[][] distractorMatrix;
+	// Track
+	Track t;
+	// Cycle
+	Cycle c;
+	// CycleType
+	CycleType cType;
 
 	// Constructor
 	public TrackRollout(SearchNode startNode) {
 		this.startNode = startNode;
+		// Get the track.
+		t = startNode.getTrack();
+		// Get the cycle.
+		c = startNode.getCycle();
+		// Set the cycle type.
+		if (c.isWild() && c.isReliable()) {
+			cType = CycleType.WILD_RELIABLE;
+		} else if (c.isWild()) {
+			cType = CycleType.WILD;
+		} else if (c.isReliable()) {
+			cType = CycleType.RELIABLE;
+		}
 		// Initialise the summation to the starting cell's reward.
 		this.totalDiscountedReward = DISCOUNT_FACTOR
 				* reward(startNode.getCell());
@@ -62,21 +82,47 @@ public class TrackRollout {
 	// This method will begin the simulation run given a starting node and
 	// return the simulated value for this path.
 	public double rollout() {
-		return 0;
-	}
+		// get the cycle's speed.
+		Speed cSpeed = c.getSpeed();
+		// Initialise
+		int lookRange;
+		// Set the look range to lookFactor * max range of the cycle per step.
+		switch (cSpeed) {
+		case SLOW:
+			lookRange = LOOK_FACTOR * 1;
+		case MEDIUM:
+			lookRange = LOOK_FACTOR * 2;
+		case FAST:
+			lookRange = LOOK_FACTOR * 3;
+		default:
+			lookRange = LOOK_FACTOR * 1;
+		}
+		// Perform the policy based on the type of the cycle
+		switch (cType) {
+		// Ignore Obstacles, avoid Distractors
+		case WILD:
 
-	private void simulator() {
-		// Roll the dice to see which probability occurred. This is the
-		// simulation section.
+			// Ignore Distractors, avoid Obstacles
+		case RELIABLE:
+
+			// Ignore Obstacles and Distractors
+		case WILD_RELIABLE:
+
+			// Avoid Obstacles and Distractors
+		default:
+
+		}
+		// Dan's notepad:
+		// Step 1: Check each space east up to a distance three times my max
+		// range for an obstacle or distractor.
+		// Step 2: If there's an o/d and my type can't ignore it take evasive
+		// action, go NE or SE at 50/50 chance.
+		return 0;
 	}
 
 	// Returns the probability that the cycle will arrive in the state sPrime in
 	// the next step given the current state (currentCell) and action a.
 	private double transition(GridCell sPrime, Action a) {
-		// get the track
-		Track t = startNode.getTrack();
-		// get the cycle
-		Cycle c = startNode.getCycle();	
 		// Check the action we're transitioning on.
 		switch (a) {
 		case ST:
@@ -98,7 +144,7 @@ public class TrackRollout {
 					return 1.0;
 				} else {
 					return 0.0;
-				} 
+				}
 			} else {
 				return 0.0;
 			}
@@ -110,7 +156,8 @@ public class TrackRollout {
 			// Check for obstacles.
 			Boolean fmObstacleE = t.getCellType(fmShiftedE) == CellType.OBSTACLE;
 			Boolean fmObstacle2E = t.getCellType(fmShifted2E) == CellType.OBSTACLE;
-			// If the to Eastern cells aren't an obstacle cell or the cycle is Wild.
+			// If the to Eastern cells aren't an obstacle cell or the cycle is
+			// Wild.
 			if (sPrime.equals(fmShifted2E)) {
 				if (c.isWild() || !fmObstacleE && !fmObstacle2E) {
 					return 1.0;
@@ -131,12 +178,13 @@ public class TrackRollout {
 			Boolean ffObstacleE = t.getCellType(ffShiftedE) == CellType.OBSTACLE;
 			Boolean ffObstacle2E = t.getCellType(ffShifted2E) == CellType.OBSTACLE;
 			Boolean ffObstacle3E = t.getCellType(ffShifted3E) == CellType.OBSTACLE;
-			// If the three Eastern cells aren't an obstacle cell or the cycle is Wild.
+			// If the three Eastern cells aren't an obstacle cell or the cycle
+			// is Wild.
 			if (sPrime.equals(ffShifted3E)) {
-				if (c.isWild() || !ffObstacleE && !ffObstacle2E && !ffObstacle3E) {
+				if (c.isWild() || !ffObstacleE && !ffObstacle2E
+						&& !ffObstacle3E) {
 					return 1.0;
-				}
-				else {
+				} else {
 					return 0.0;
 				}
 			} else {
@@ -199,21 +247,63 @@ public class TrackRollout {
 		}
 	}
 
-	// Moves the cycle given a valid action and returns the cell it arrived in.
-	private void step(Action a, GridCell cell) {
-		// Increase the amount rewards are discounted.
-		DISCOUNT_FACTOR *= DISCOUNT_RATE;
-		// Add the reward to the summation.
-		totalDiscountedReward += DISCOUNT_FACTOR * reward(cell);
-		// Take the step
-		currentCell = cell;
+	// If given a valid action that would move the cycle within the bounds of
+	// the track moves the cycle and returns true else returns false.
+	private boolean step(Action a) {
+		Boolean validAction;
+		GridCell cell = currentCell;
+		switch (a) {
+		case ST:
+			validAction = RaceSimTools.withinBounds(currentCell, t);
+			// No movement necessary.
+		case FS:
+			validAction = RaceSimTools.withinBounds(
+					currentCell.shifted(Direction.E), t);
+			// Set new cell East.
+			cell = currentCell.shifted(Direction.E);
+		case FM:
+			validAction = RaceSimTools.withinBounds(
+					(currentCell.shifted(Direction.E)).shifted(Direction.E), t);
+			// Set new cell two East.
+			cell = (currentCell.shifted(Direction.E)).shifted(Direction.E);
+		case FF:
+			validAction = RaceSimTools.withinBounds(((currentCell
+					.shifted(Direction.E)).shifted(Direction.E))
+					.shifted(Direction.E), t);
+			cell = ((currentCell.shifted(Direction.E)).shifted(Direction.E))
+					.shifted(Direction.E);
+		case NE:
+			validAction = RaceSimTools.withinBounds(
+					(currentCell.shifted(Direction.NE)), t);
+			cell = currentCell.shifted(Direction.NE);
+		case SE:
+			validAction = RaceSimTools.withinBounds(
+					(currentCell.shifted(Direction.SE)), t);
+			cell = currentCell.shifted(Direction.SE);
+		case TO:
+			// How about no.
+			validAction = false;
+		case TC:
+			// How about noooooo.
+			validAction = false;
+		default:
+			validAction = false;
+		}
+		if (validAction) {
+			// Increase the amount rewards are discounted.
+			DISCOUNT_FACTOR *= DISCOUNT_RATE;
+			// Add the reward to the summation.
+			totalDiscountedReward += DISCOUNT_FACTOR * reward(cell);
+			// Take the step
+			if (!currentCell.equals(cell)) {
+				currentCell = cell;
+			}
+			return true;
+		}
+		return false;
 	}
 
 	private Double reward(GridCell cell) {
-		// Get the track to determine factors.
-		Track t = startNode.getTrack();
-		// Get the cycle for the same.
-		Cycle c = startNode.getCycle();
 		// Cell Attributes
 		int cellRow = cell.getRow();
 		int cellCol = cell.getCol();
