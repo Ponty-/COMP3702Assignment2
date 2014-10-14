@@ -25,7 +25,8 @@ public class SearchNode {
 
 	private final double BALANCING_FACTOR = 1.0;
 
-	public SearchNode(GridCell cell, Cycle cycle, Track track, double [][] distractorMatrix) {
+	public SearchNode(GridCell cell, Cycle cycle, Track track,
+			double[][] distractorMatrix) {
 		this.cell = cell;
 		this.cycle = cycle;
 		this.track = track;
@@ -36,56 +37,68 @@ public class SearchNode {
 		children = new HashMap<Action, SearchNode>();
 		actionVisits = new HashMap<Action, Integer>();
 	}
-	
+
 	public GridCell getCell() {
 		return cell;
 	}
-	
+
 	public Cycle getCycle() {
 		return cycle;
 	}
-	
+
 	public Track getTrack() {
 		return track;
 	}
-	
-	public double [][] getDistractorMatrix() {
+
+	public double[][] getDistractorMatrix() {
 		return distractorMatrix;
 	}
-	
-	// Fill this node's children mapping with all possible actions from the node.
+
+	// Fill this node's children mapping with all possible actions from the
+	// node.
 	public void expand() {
 		// Use the track to work out child nodes for actions.
 		GridCell shiftedNE = cell.shifted(Direction.NE);
 		// If there's not an obstacle or we're using a wild cycle.
 		// Wild cycles may pass through obstacles for minor damage.
-		if (!(track.getCellType(shiftedNE) == (Track.CellType.OBSTACLE)) || cycle.isWild()) {
+		if (!(track.getCellType(shiftedNE) == (Track.CellType.OBSTACLE))
+				|| cycle.isWild()) {
 			// Add it to the children.
-			children.put(Action.NE, new SearchNode(shiftedNE, cycle, track, distractorMatrix));
+			children.put(Action.NE, new SearchNode(shiftedNE, cycle, track,
+					distractorMatrix));
 		}
 
 		GridCell shiftedSE = cell.shifted(Direction.SE);
-		if (!(track.getCellType(shiftedSE) == (Track.CellType.OBSTACLE)) || cycle.isWild()) {
-			children.put(Action.SE, new SearchNode(shiftedSE, cycle, track, distractorMatrix));
+		if (!(track.getCellType(shiftedSE) == (Track.CellType.OBSTACLE))
+				|| cycle.isWild()) {
+			children.put(Action.SE, new SearchNode(shiftedSE, cycle, track,
+					distractorMatrix));
 		}
 
-		// Nested if for moving forwards - if obstacle in the way and not wild, no action
+		// Nested if for moving forwards - if obstacle in the way and not wild,
+		// no action
 		GridCell shiftedE = cell.shifted(Direction.E);
-		if (!(track.getCellType(shiftedE) == (Track.CellType.OBSTACLE)) || cycle.isWild()) {
-			children.put(Action.FS, new SearchNode(shiftedE, cycle, track, distractorMatrix));
+		if (!(track.getCellType(shiftedE) == (Track.CellType.OBSTACLE))
+				|| cycle.isWild()) {
+			children.put(Action.FS, new SearchNode(shiftedE, cycle, track,
+					distractorMatrix));
 
 			// If cycle is medium or fast speed try shifting again
 			shiftedE = shiftedE.shifted(Direction.E);
-			if (cycle.getSpeed() == Speed.MEDIUM || cycle.getSpeed() == Speed.FAST) {
-				if (!(track.getCellType(shiftedE) == (Track.CellType.OBSTACLE)) || cycle.isWild()) {
-					children.put(Action.FM, new SearchNode(shiftedE, cycle, track, distractorMatrix));
-	
+			if (cycle.getSpeed() == Speed.MEDIUM
+					|| cycle.getSpeed() == Speed.FAST) {
+				if (!(track.getCellType(shiftedE) == (Track.CellType.OBSTACLE))
+						|| cycle.isWild()) {
+					children.put(Action.FM, new SearchNode(shiftedE, cycle,
+							track, distractorMatrix));
+
 					// If cycle is fast try shifting again
 					shiftedE = shiftedE.shifted(Direction.E);
 					if (cycle.getSpeed() == Speed.FAST) {
-						if (!(track.getCellType(shiftedE) == (Track.CellType.OBSTACLE)) 
+						if (!(track.getCellType(shiftedE) == (Track.CellType.OBSTACLE))
 								|| cycle.isWild()) {
-							children.put(Action.FF, new SearchNode(shiftedE, cycle, track, distractorMatrix));
+							children.put(Action.FF, new SearchNode(shiftedE,
+									cycle, track, distractorMatrix));
 						}
 					}
 				}
@@ -93,13 +106,14 @@ public class SearchNode {
 		}
 	}
 
-	public void selectAction() {
+	public void search() {
 		// Track the visited nodes for backing up rollouts.
 		List<SearchNode> visited = new LinkedList<SearchNode>();
 		SearchNode cur = this; // Current node
 		visited.add(this);
 		// Search down to find a leaf node, always selecting the 'best'.
-		// The 'best' is given by the exploration vs. exploitation algorithm select().
+		// The 'best' is given by the exploration vs. exploitation algorithm
+		// select().
 		while (!cur.isLeaf()) {
 			cur = cur.select();
 			// System.out.println("Adding: " + cur);
@@ -107,7 +121,7 @@ public class SearchNode {
 		}
 
 		double value;
-		//Check if cur is the goal
+		// Check if cur is the goal
 		if (cur.isGoal) {
 			// Set reward to the track prize
 			value = track.getPrize();
@@ -143,7 +157,7 @@ public class SearchNode {
 			SearchNode c = children.get(a);
 			double uctValue =
 			// avg total discounted value of runs starting from here
-			c.totReward / (c.visits) +
+			c.getValue() +
 			/* natural log of times visited / times action taken */
 			BALANCING_FACTOR
 					* Math.sqrt(Math.log(c.visits) / (actionVisits.get(a)));
@@ -166,5 +180,24 @@ public class SearchNode {
 
 	public boolean isLeaf() {
 		return isGoal || children.size() == 0;
+	}
+
+	public double getValue() {
+		return totReward / visits;
+	}
+	
+	public Action bestAction() {
+		Action best = null;
+		double bestUtility = Double.MIN_VALUE;
+		
+		//Loop over all the actions that can be performed
+		for (Action a : children.keySet()) {
+			//Find the action leading to the best child node
+			if (children.get(a).getValue() > bestUtility) {
+				best = a;
+			}
+		}
+		
+		return best;
 	}
 }

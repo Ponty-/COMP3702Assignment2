@@ -26,13 +26,6 @@ public class TourPicker {
 		 - everything is bad wtf is balance
 		*/
 		
-		// Load this with the index of the track we're about to test. Stubbed to 99.
-		Track track = tour.getTrack(99);
-		// Load the builder with the track.
-		double[][] distractorMatrix = buildDistractorMatrix(track);
-		// Now send this downward as a parameter on SearchNode() 
-		// or however you want to make it accessible to my reward function.
-		
 		// Return the decision as as a map of tracks and cycles to use on them
 		return null;
 	}

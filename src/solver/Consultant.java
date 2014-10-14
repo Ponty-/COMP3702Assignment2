@@ -29,6 +29,10 @@ public class Consultant {
 	 * 
 	 * @param tour
 	 */
+	
+	//The time to calculate a single step online in nanoseconds
+	private static long STEP_TIME = 1500000000;
+	
 	public void solveTour(Tour tour) {
 		// Work out what races we are participating in and with what cycles
 		Map<Track, Cycle> races = TourPicker.choose(tour);
@@ -49,25 +53,51 @@ public class Consultant {
 			ArrayList<Player> players = new ArrayList<Player>();
 			Map<String, GridCell> startingPositions = t.getStartingPositions();
 			String id = "Glorious Cycle of Ultimate Destiny";
+			double[][] distractorMatrix = buildDistractorMatrix(t);
 
 			// Iterate over starting positions and use MCTS to find the best
-			GridCell startPosition = null;
+			SearchNode bestNode = null;
 
 			for (GridCell pos : startingPositions.values()) {
 				SearchNode node = new SearchNode(pos, races.get(t), t,
 						buildDistractorMatrix(t));
 				// Search
+				node.search();
 				// Compare to previous position
+				if (bestNode == null) {
+					bestNode = node;
+				} else if (node.getValue() > bestNode.getValue()) {
+					bestNode = node;
+				}
 			}
-			players.add(new Player(id, races.get(t), startPosition));
+			// Add player to track at the best starting position
+			players.add(new Player(id, races.get(t), bestNode.getCell()));
 
 			// Start race
 			tour.startRace(t, players);
 
-			// Race
+			// Race - cue music
+			while (tour.getLatestRaceState().getStatus() == RaceState.Status.RACING) {
+				//Get the current state of the race
+				RaceState currentState = tour.getLatestRaceState();
+				Player us = currentState.getPlayers().get(0);
+				SearchNode root = new SearchNode(us.getPosition(),
+						us.getCycle(), t, distractorMatrix);
+				
+				//Decide what to do next
+				long end = System.nanoTime() + STEP_TIME;
+				//Search for as long as we have
+				//TODO add a stop condition?
+				while (System.nanoTime() < end) {
+					root.search();
+				}
+				//Select the best action and take a step
+				ArrayList<Action> actions = new ArrayList<Action>();
+				actions.add(root.bestAction());
+				tour.stepTurn(actions);
+				
+			}
 		}
-		// Use MCTS to determine best starting position
-		// Loop over actions until goal, using MCTS to pick the best one
 
 	}
 
