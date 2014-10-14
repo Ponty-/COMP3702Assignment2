@@ -37,13 +37,15 @@ public class Consultant {
 		Map<Track, Cycle> races = TourPicker.choose(tour);
 
 		// Register for tracks and buy cycles
-		for (Track t : races.keySet()) {
-			// Buy the cycle if we don't have it already
-			if (!tour.getPurchasedCycles().contains(races.get(t))) {
-				tour.buyCycle(races.get(t));
+		if (races != null) {
+			for (Track t : races.keySet()) {
+				// Buy the cycle if we don't have it already
+				if (!tour.getPurchasedCycles().contains(races.get(t))) {
+					tour.buyCycle(races.get(t));
+				}
+				// Register for the track
+				tour.registerTrack(t, 1);
 			}
-			// Register for the track
-			tour.registerTrack(t, 1);
 		}
 
 		// Loop - do all the races
@@ -59,10 +61,10 @@ public class Consultant {
 			for (GridCell pos : startingPositions.values()) {
 				SearchNode node = new SearchNode(pos, races.get(t), t,
 						buildDistractorMatrix(t));
-				
+
 				// Search
 				node.loopSearch(STEP_TIME);
-				
+
 				// Compare to previous position
 				if (bestNode == null) {
 					bestNode = node;
@@ -86,7 +88,7 @@ public class Consultant {
 						us.getCycle(), t, distractorMatrix);
 
 				// Decide what to do next
-				//Search
+				// Search
 				root.loopSearch(STEP_TIME);
 				// Select the best action and take a step
 				ArrayList<Action> actions = new ArrayList<Action>();
