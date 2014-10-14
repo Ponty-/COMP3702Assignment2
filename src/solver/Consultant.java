@@ -61,12 +61,7 @@ public class Consultant {
 						buildDistractorMatrix(t));
 				
 				// Search
-				long end = System.nanoTime() + STEP_TIME;
-				// Search for as long as we have
-				// TODO add a stop condition?
-				while (System.nanoTime() < end) {
-					node.search();
-				}
+				node.loopSearch(STEP_TIME);
 				
 				// Compare to previous position
 				if (bestNode == null) {
@@ -91,12 +86,8 @@ public class Consultant {
 						us.getCycle(), t, distractorMatrix);
 
 				// Decide what to do next
-				long end = System.nanoTime() + STEP_TIME;
-				// Search for as long as we have
-				// TODO add a stop condition?
-				while (System.nanoTime() < end) {
-					root.search();
-				}
+				//Search
+				root.loopSearch(STEP_TIME);
 				// Select the best action and take a step
 				ArrayList<Action> actions = new ArrayList<Action>();
 				actions.add(root.bestAction());

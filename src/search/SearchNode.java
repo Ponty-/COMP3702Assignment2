@@ -106,6 +106,14 @@ public class SearchNode {
 		}
 	}
 
+	public void loopSearch(long time) {
+		long end= System.nanoTime() + time;
+		
+		while (System.nanoTime() < time) {
+			search();
+		}
+	}
+	
 	public void search() {
 		// Track the visited nodes for backing up rollouts.
 		List<SearchNode> visited = new LinkedList<SearchNode>();
