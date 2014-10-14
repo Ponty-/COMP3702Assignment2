@@ -7,6 +7,7 @@ import java.util.Random;
 
 import problem.Action;
 import problem.Cycle;
+import problem.Distractor;
 import problem.GridCell;
 import problem.Player;
 import problem.RaceSimTools;
@@ -44,25 +45,26 @@ public class Consultant {
 
 		// Loop - do all the races
 		for (Track t : tour.getUnracedTracks()) {
-			//Track setup
+			// Track setup
 			ArrayList<Player> players = new ArrayList<Player>();
 			Map<String, GridCell> startingPositions = t.getStartingPositions();
 			String id = "Glorious Cycle of Ultimate Destiny";
-			
-			//Iterate over starting positions and use MCTS to find the best
+
+			// Iterate over starting positions and use MCTS to find the best
 			GridCell startPosition = null;
-			
+
 			for (GridCell pos : startingPositions.values()) {
-				SearchNode node = new SearchNode(pos, races.get(t), t);
-				//Search
-				//Compare to previous position
+				SearchNode node = new SearchNode(pos, races.get(t), t,
+						buildDistractorMatrix(t));
+				// Search
+				// Compare to previous position
 			}
 			players.add(new Player(id, races.get(t), startPosition));
 
 			// Start race
 			tour.startRace(t, players);
-			
-			//Race
+
+			// Race
 		}
 		// Use MCTS to determine best starting position
 		// Loop over actions until goal, using MCTS to pick the best one
@@ -139,4 +141,28 @@ public class Consultant {
 
 		}
 	}
+
+	// Creates a matrix of values representing the distractor probabilities for
+	// each cell
+	// non-zero probability means a distractor can occur in the cell.
+	public static double[][] buildDistractorMatrix(Track t) {
+		// Initialise the distractor matrix.
+		// Get the list of cells that have possible distractors.
+		List<Distractor> distractors = t.getDistractors();
+		// Store it as an Array.
+		ArrayList<Distractor> d = new ArrayList<Distractor>();
+		d.addAll(distractors);
+		// Build the distractor matrix.
+		double[][] distractorMatrix = new double[t.getNumRows()][t.getNumCols()];
+		// Load the matrix with the probabilities.
+		for (int i = 0; i < d.size(); i++) {
+			int dRow = d.get(i).getPosition().getRow();
+			int dCol = d.get(i).getPosition().getCol();
+			double dProbability = d.get(i).getAppearProbability();
+			distractorMatrix[dRow][dCol] = dProbability;
+		}
+		// Give him the blue pill.
+		return distractorMatrix;
+	}
+
 }

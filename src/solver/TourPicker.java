@@ -37,29 +37,7 @@ public class TourPicker {
 		return null;
 	}
 	
-	// Methods
-	// Creates a matrix of values representing the distractor probabilities for each cell
-	// non-zero probability means a distractor can occur in the cell.
-	public static double[][] buildDistractorMatrix (Track t) {
-		// Initialise the distractor matrix.
-		// Get the list of cells that have possible distractors.
-		List<Distractor> distractors = t.getDistractors();
-		// Store it as an Array.
-		ArrayList<Distractor> d = new ArrayList<Distractor>();
-		d.addAll(distractors);
-		// Build the distractor matrix.
-		double[][] distractorMatrix = new double [t.getNumRows()] [t.getNumCols()];
-		// Load the matrix with the probabilities.
-		for (int i = 0; i < d.size(); i++) {
-			int dRow = d.get(i).getPosition().getRow();
-			int dCol = d.get(i).getPosition().getCol();
-			double dProbability = d.get(i).getAppearProbability();
-			distractorMatrix[dRow][dCol] = dProbability;
-		}
-		// Give him the blue pill.
-		return distractorMatrix;
-	}
-	
+	// Methods	
 	/* ranks tracks based upon expected winnings */
 	public static Map<Track, double[]> rankTracks(Tour tour) {
 		// Map of tracks and their attributes (weighted prize, obstacle heavy, distractor heavy, opponent heavy)
