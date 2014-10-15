@@ -107,13 +107,13 @@ public class SearchNode {
 	}
 
 	public void loopSearch(long time) {
-		long end= System.nanoTime() + time;
-		
-		while (System.nanoTime() < time) {
+		long end = System.nanoTime() + time;
+
+		while (System.nanoTime() < end) {
 			search();
 		}
 	}
-	
+
 	public void search() {
 		// Track the visited nodes for backing up rollouts.
 		List<SearchNode> visited = new LinkedList<SearchNode>();
@@ -194,19 +194,19 @@ public class SearchNode {
 	public double getValue() {
 		return totReward / visits;
 	}
-	
+
 	public Action bestAction() {
 		Action best = null;
 		double bestUtility = Double.MIN_VALUE;
-		
-		//Loop over all the actions that can be performed
+
+		// Loop over all the actions that can be performed
 		for (Action a : children.keySet()) {
-			//Find the action leading to the best child node
+			// Find the action leading to the best child node
 			if (children.get(a).getValue() > bestUtility) {
 				best = a;
 			}
 		}
-		
+
 		return best;
 	}
 }

@@ -34,17 +34,17 @@ public class Consultant {
 	 */
 	public void solveTour(Tour tour) {
 		// Work out what races we are participating in and with what cycles
-		Map<Track, Cycle> races = TourPicker.choose(tour);
+		List<EvaluatedTrack> races = TourPicker.choose(tour);
 
 		// Register for tracks and buy cycles
 		if (races != null) {
-			for (Track t : races.keySet()) {
+			for (EvaluatedTrack t : races) {
 				// Buy the cycle if we don't have it already
-				if (!tour.getPurchasedCycles().contains(races.get(t))) {
-					tour.buyCycle(races.get(t));
+				if (!tour.getPurchasedCycles().contains(t.getCycle())) {
+					tour.buyCycle(t.getCycle());
 				}
 				// Register for the track
-				tour.registerTrack(t, 1);
+				tour.registerTrack(t.getTrack(), 1);
 			}
 		}
 
@@ -52,29 +52,37 @@ public class Consultant {
 		for (Track t : tour.getUnracedTracks()) {
 			// Track setup
 			ArrayList<Player> players = new ArrayList<Player>();
-			Map<String, GridCell> startingPositions = t.getStartingPositions();
+			// Map<String, GridCell> startingPositions =
+			// t.getStartingPositions();
 			double[][] distractorMatrix = buildDistractorMatrix(t);
 
-			// Iterate over starting positions and use MCTS to find the best
-			SearchNode bestNode = null;
+			/*
+			 * // Iterate over starting positions and use MCTS to find the best
+			 * This is now covered in the picker/EvaluatedTrack SearchNode
+			 * bestNode = null;
+			 * 
+			 * for (GridCell pos : startingPositions.values()) { SearchNode node
+			 * = new SearchNode(pos, races.get(t), t, buildDistractorMatrix(t));
+			 * 
+			 * // Search node.loopSearch(STEP_TIME);
+			 * 
+			 * // Compare to previous position if (bestNode == null) { bestNode
+			 * = node; } else if (node.getValue() > bestNode.getValue()) {
+			 * bestNode = node; } }
+			 */
 
-			for (GridCell pos : startingPositions.values()) {
-				SearchNode node = new SearchNode(pos, races.get(t), t,
-						buildDistractorMatrix(t));
-
-				// Search
-				node.loopSearch(STEP_TIME);
-
-				// Compare to previous position
-				if (bestNode == null) {
-					bestNode = node;
-				} else if (node.getValue() > bestNode.getValue()) {
-					bestNode = node;
+			// Find the evaluatedtrack for this race
+			EvaluatedTrack thisRace = null;
+			for (EvaluatedTrack e : races) {
+				if (e.getTrack().equals(t)) {
+					thisRace = e;
+					break;
 				}
 			}
+
 			// Add player to track at the best starting position
-			players.add(new Player(BADASS_NAME, races.get(t), bestNode
-					.getCell()));
+			players.add(new Player(BADASS_NAME, thisRace.getCycle(), thisRace
+					.getStart()));
 
 			// Start race
 			tour.startRace(t, players);
