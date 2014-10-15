@@ -71,7 +71,7 @@ public class TrackRollout {
 		}
 		this.distractorMatrix = startNode.getDistractorMatrix();
 		this.currentCell = startNode.getCell();
-		
+
 		// Initialise the summation to the starting cell's reward.
 		this.totalDiscountedReward = DISCOUNT_FACTOR
 				* reward(startNode.getCell());
@@ -118,7 +118,8 @@ public class TrackRollout {
 					GridCell aheadCell = aheadList.get(i);
 					int aheadCellRow = aheadCell.getRow();
 					int aheadCellCol = aheadCell.getCol();
-					if (distractorMatrix[aheadCellRow][aheadCellCol] > 0.0) {
+					if (t.withinBorder(aheadCell)
+							&& distractorMatrix[aheadCellRow][aheadCellCol] > 0.0) {
 						wEvasiveAction = true;
 					}
 				}
@@ -488,10 +489,10 @@ public class TrackRollout {
 		// DISTRACTOR
 		// Get the probability of a distractor occurring at the cell from the
 		// distractor matrix.
-		
-		//System.out.println("Reward cell: " + cell);
-		//System.out.println("Distractor matrix: " + distractorMatrix);
-		
+
+		// System.out.println("Reward cell: " + cell);
+		// System.out.println("Distractor matrix: " + distractorMatrix);
+
 		double dProbability = distractorMatrix[cellRow][cellCol];
 		// If the probability is non zero
 		if (dProbability != 0.0) {

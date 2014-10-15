@@ -80,12 +80,22 @@ public class Consultant {
 				}
 			}
 
+			// Get the id of the starting position
+			String id = null;
+			for (String s : t.getStartingPositions().keySet()) {
+				if (t.getStartingPositions().get(s).equals(thisRace.getStart())) {
+					id = s;
+					break;
+				}
+			}
+
 			// Add player to track at the best starting position
-			players.add(new Player(BADASS_NAME, thisRace.getCycle(), thisRace
+			players.add(new Player(id, thisRace.getCycle(), thisRace
 					.getStart()));
 
 			// Start race
 			tour.startRace(t, players);
+			System.out.println("Number of races: " + tour.getNumRaces());
 
 			// Race - cue music
 			while (tour.getLatestRaceState().getStatus() == RaceState.Status.RACING) {
