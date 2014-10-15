@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import problem.Cycle;
 import problem.Cycle.Speed;
@@ -22,8 +23,8 @@ public class SearchNode {
 	private boolean isGoal; // If this node represents a goal state.
 	private Track track; // The track this cell is in, used to query the world.
 	private double[][] distractorMatrix; // The distractorMatrix for this track.
-
-	private final double BALANCING_FACTOR = 1.0;
+	private double bias; //The bias to use in UCT calculations
+	private Random rng; //random number generator
 
 	public SearchNode(GridCell cell, Cycle cycle, Track track,
 			double[][] distractorMatrix) {
@@ -38,6 +39,9 @@ public class SearchNode {
 		isGoal = track.getCellType(cell) == Track.CellType.GOAL;
 		children = new HashMap<Action, SearchNode>();
 		actionVisits = new HashMap<Action, Integer>();
+		
+		bias = track.getPrize() * 0.6;
+		rng = new Random();
 	}
 
 	public GridCell getCell() {
@@ -182,9 +186,10 @@ public class SearchNode {
 			//System.out.println("Math.log(c.visits): " + Math.log(c.visits));
 			//System.out.println("Actionvisits.get(a): " + actionVisits.get(a));
 			
+			//UCT plus a small random number to resolve ties
 			double uctValue = c.getValue()
-					+ (BALANCING_FACTOR * Math.sqrt(Math.log(c.visits)
-							/ (actionVisits.get(a))));
+					+ (bias * Math.sqrt(Math.log(c.visits)
+							/ (actionVisits.get(a)))) + rng.nextDouble();
 			System.out.println("UCT value for " + a + ": " + uctValue);
 			System.out.println("Current best: " + bestValue);
 			if (uctValue > bestValue) {
@@ -216,7 +221,7 @@ public class SearchNode {
 
 	public Action bestAction() {
 		Action best = null;
-		double bestUtility = Double.MIN_VALUE;
+		double bestUtility = -Double.MAX_VALUE;
 
 		// Loop over all the actions that can be performed
 		for (Action a : children.keySet()) {
