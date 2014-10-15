@@ -1,5 +1,6 @@
 package solver;
 
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -35,6 +36,20 @@ public class TourPicker {
 		// expensive to make a profit on the track
 		// then iterates over positions in the track using MTCS to try and find
 		// the best cycle
+		Iterator iterJ = trackSet.iterator();
+		long numCycles = cycleList.size();
+		long startPosCount = 0;
+		long jobs = 0;
+		//finds how big the array of track cycle simulations needs to be
+		while (iterJ.hasNext()) {
+			Track jTrack = (Track) iterJ.next();
+			startPosCount += jTrack.getStartingPositions().size();
+		}
+		jobs = startPosCount * numCycles;
+		EvaluatedTrack[] trackCycleArray;
+		trackCycleArray = new EvaluatedTrack[(int) jobs];
+		int counter = 0;
+		// iterate over every track to find out how each cycle performs on it
 		while (iterT.hasNext()) {
 			currentTrack = (Track) iterT.next();
 			Iterator iterC = cycleList.iterator();
@@ -45,144 +60,128 @@ public class TourPicker {
 			double[][] distractorMatrix = Consultant
 					.buildDistractorMatrix(currentTrack);
 
-			// iterate over cycles
+			
 			Cycle bestCycle = null;
 			SearchNode bestNode = null;
-
+			
+			// iterate over every cycle to see how it performs
 			while (iterC.hasNext()) {
-				// if the track has a certain proportion or higher of obstacles
-				// or distractors then discount certain cycles
 				currentCycle = (Cycle) iterC.next();
-				if (weightedTracks.get(currentTrack)[1] >= 0.2) {
-					if (!currentCycle.isWild()) {
-						continue;
-					}
-				}
-				if (weightedTracks.get(currentTrack)[2] >= 0.2) {
-					if (!currentCycle.isReliable()) {
-						continue;
-					}
-				}
-				// only continue if the cycle could make money on the track
-				if (weightedTracks.get(currentTrack)[0]
-						- currentCycle.getPrice() > 0) {
-					// check the cycle from each potential starting position
-					for (GridCell pos : startingPositions.values()) {
-						SearchNode node = new SearchNode(pos, currentCycle,
-								currentTrack,
-								Consultant.buildDistractorMatrix(currentTrack));
+				//iterate over every start position for the cycle
+				for (GridCell pos : startingPositions.values()) {
+					SearchNode node = new SearchNode(pos, currentCycle,
+							currentTrack,
+							Consultant.buildDistractorMatrix(currentTrack));
 
-						// Search
-						node.loopSearch(timeFactor);
+					// Search
+					node.loopSearch(timeFactor);
 
-						// Compare to previous best cycle
-						if (bestNode == null) {
-							bestNode = node;
-							bestCycle = currentCycle;
-						} else if (node.getValue() - currentCycle.getPrice() > bestNode
-								.getValue()) {
-							bestNode = node;
-							bestCycle = currentCycle;
-						}
-					}
-
+					// store in an array
+					trackCycleArray[counter] = new EvaluatedTrack(currentTrack, currentCycle, node.getValue(), node.getCell());
+					counter++;
+					
 				}
 			}
-
-			// If no cycle was found just pick the last one
-			if (bestCycle == null) {
-				System.out.println("Just picking the last cycle");
-				bestCycle = currentCycle;
-			}
-
-			// If no best starting position was found pick the middle one
-			if (bestNode == null) {
-				System.out.println("Just picking the middle node");
-				bestNode = new SearchNode(new ArrayList<GridCell>(
-						startingPositions.values()).get(startingPositions
-						.values().size() / 2), currentCycle, currentTrack,
-						Consultant.buildDistractorMatrix(currentTrack));
-
-			}
-
-			// store tracks and their best cycle and expected winnings with that
-			// cycle
-			System.out.println("Current track: " + currentTrack);
-			System.out.println("bestCycle: " + bestCycle);
-			System.out.println("bestNode value: " + bestNode.getValue());
-			System.out.println("bestNode cell: " + bestNode.getCell());
-			trackResults.add(new EvaluatedTrack(currentTrack, bestCycle,
-					bestNode.getValue(), bestNode.getCell()));
 		}
-		List<Track> trackCombo = new ArrayList<Track>();
+
+		List<EvaluatedTrack> trackCombo = new ArrayList<EvaluatedTrack>();
 		double maxPrize = 0;
-		// check all combinations of tracks (1,2,3)
-		for (EvaluatedTrack t : trackResults) {
+		double maxCost = tour.getCurrentMoney();
+		double currentPrize = 0;
+		//check all combinations of tracks (1,2,3)		
+		for (EvaluatedTrack t : trackCycleArray) {
 			// if this track alone gives more than the current best set it to
 			// best
-			if (trackCombo.size() == 0) {
-				trackCombo.add(t.getTrack());
+			double currentCost = t.getCycle().getPrice() + t.getTrack().getRegistrationFee();
+			if (currentCost > maxCost) {
+				continue;
 			}
-			if (t.getPrize() > maxPrize) {
+			// if first iteration
+			if(trackCombo.size() == 0) {
+				trackCombo.add(t);
+				currentPrize = t.getPrize() - currentCost;
+			}
+			
+			// if the cost of the potential winnings (prize - cycle cost - reg cost) is greater than the current max prize
+			if (t.getPrize() - currentCost > maxPrize) {
 				trackCombo.clear();
-				trackCombo.add(t.getTrack());
-				maxPrize = t.getPrize();
+				trackCombo.add(t);
+				currentPrize = t.getPrize() - currentCost;
 			}
-			for (EvaluatedTrack x : trackResults) {
+			for (EvaluatedTrack x : trackCycleArray) {
 				// if this track is different to the previous and gives more
 				// when added set it and previous as best
-				// check for repeat cycle usage
-				if (x.equals(t)) {
+				// check for same track
+				if (x.getTrack().equals(t.getTrack())) {
 					continue;
 				}
-				if (t.getPrize() + x.getPrize() > maxPrize) {
-					trackCombo.clear();
-					trackCombo.add(t.getTrack());
-					trackCombo.add(x.getTrack());
-					if (x.getCycle().equals(t.getCycle())) {
-						maxPrize = t.getPrize() + x.getPrize()
-								+ x.getCycle().getPrice();
-					} else {
-						maxPrize = t.getPrize() + x.getPrize();
-					}
-
+				//check if we have already bought the cycle
+				currentCost = currentCost + x.getTrack().getRegistrationFee();
+				if(!x.getCycle().equals(t.getCycle())) {
+					currentCost = currentCost + x.getCycle().getPrice();
+				} 
+				
+				if(currentCost > maxCost) {
+					continue;
 				}
-				for (EvaluatedTrack y : trackResults) {
+				
+				
+				if (t.getPrize() + x.getPrize() - currentCost > maxPrize) {
+					trackCombo.clear();
+					trackCombo.add(t);
+					trackCombo.add(x);
+					currentPrize = t.getPrize() + x.getPrize() - currentCost;
+					
+				}
+				for (EvaluatedTrack y : trackCycleArray) {
 					// if this track is different to the previous ones and gives
 					// more when added with the previous set them as best
-					// check for repeat cycle usage
-					if (y.equals(x)) {
+					// check for same track
+					if (y.getTrack().equals(x.getTrack())) {
 						continue;
 					}
-					if (y.equals(t)) {
+					if (y.getTrack().equals(t.getTrack())) {
 						continue;
 					}
-					if (t.getPrize() + x.getPrize() + y.getPrize() > maxPrize) {
-						trackCombo.clear();
-						trackCombo.add(t.getTrack());
-						trackCombo.add(x.getTrack());
-						trackCombo.add(y.getTrack());
-						if (x.getCycle().equals(y.getCycle())) {
-							maxPrize = t.getPrize() + x.getPrize()
-									+ y.getPrize() + y.getCycle().getPrice();
-						} else if (t.getCycle().equals(y.getCycle())) {
-							maxPrize = t.getPrize() + x.getPrize()
-									+ y.getPrize() + y.getCycle().getPrice();
-						} else {
-							maxPrize = t.getPrize() + x.getPrize()
-									+ y.getPrize();
+					//check if we have already bought the cycle
+					currentCost = currentCost + y.getTrack().getRegistrationFee();
+					if(!y.getCycle().equals(t.getCycle())) {
+						if(!y.getCycle().equals(x.getCycle())){
+							currentCost = currentCost + y.getTrack().getRegistrationFee();
 						}
-
+					}
+					
+					if (t.getPrize() + x.getPrize() + y.getPrize() - currentCost> maxPrize) {
+						trackCombo.clear();
+						trackCombo.add(t);
+						trackCombo.add(x);
+						trackCombo.add(y);
+						currentPrize = t.getPrize() + x.getPrize() + y.getPrize() - currentCost;
+					}
+					//if current prize for this set of 3 is best prize so far set max prize to it
+					if(currentPrize > maxPrize) {
+						maxPrize = currentPrize;
 					}
 				}
+				//if current prize for this set of 2 is best prize so far set max prize to it
+				if(currentPrize > maxPrize) {
+					maxPrize = currentPrize;
+				}
+			}
+			//if current prize for this set of 1 is best prize so far set max prize to it
+			if(currentPrize > maxPrize) {
+				maxPrize = currentPrize;
 			}
 		}
 		// goes through the evaluated track list and selects the track and cycle
 		// from it that corresponds to the selected track
-		for (EvaluatedTrack z : trackResults) {
-			for (Track t : trackCombo) {
-				if (z.getTrack().equals(t)) {
-					output.add(z);
+		for (EvaluatedTrack z : trackCycleArray) {
+			for (EvaluatedTrack t : trackCombo) {
+				if (z.getTrack().equals(t.getTrack())) {
+					if (z.getCycle().equals(t.getCycle())) {
+						output.add(z);
+					}
+					
 				}
 			}
 
@@ -211,15 +210,15 @@ public class TourPicker {
 			// reduce expected prize based on obstacles
 			// obstacles/cells
 			double obsWeight = percentObs(currentTrack);
-			prize = prize * (1 - obsWeight);
+			//prize = prize * (1 - obsWeight);
 			attributes[1] = obsWeight;
 
 			// reduce expected prize based on distractors
 			// distractors/cells
 			double distractorWeight = (currentTrack.getDistractors().size() / (currentTrack
 					.getNumCols() * currentTrack.getNumRows()));
-			prize = prize * (1 - distractorWeight);
-			prize = prize - currentTrack.getRegistrationFee();
+			//prize = prize * (1 - distractorWeight);
+			//prize = prize - currentTrack.getRegistrationFee();
 			attributes[2] = distractorWeight;
 
 			attributes[0] = prize;
