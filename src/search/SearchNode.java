@@ -31,8 +31,10 @@ public class SearchNode {
 		this.cycle = cycle;
 		this.track = track;
 		this.distractorMatrix = distractorMatrix;
+		//System.out.println(distractorMatrix);
+		
 		totReward = 0;
-		visits = 0;
+		visits = 1;
 		isGoal = track.getCellType(cell) == Track.CellType.GOAL;
 		children = new HashMap<Action, SearchNode>();
 		actionVisits = new HashMap<Action, Integer>();
@@ -66,6 +68,7 @@ public class SearchNode {
 			// Add it to the children.
 			children.put(Action.NE, new SearchNode(shiftedNE, cycle, track,
 					distractorMatrix));
+			actionVisits.put(Action.NE, 1);
 		}
 
 		GridCell shiftedSE = cell.shifted(Direction.SE);
@@ -73,6 +76,7 @@ public class SearchNode {
 				|| cycle.isWild()) {
 			children.put(Action.SE, new SearchNode(shiftedSE, cycle, track,
 					distractorMatrix));
+			actionVisits.put(Action.SE, 1);
 		}
 
 		// Nested if for moving forwards - if obstacle in the way and not wild,
@@ -82,6 +86,7 @@ public class SearchNode {
 				|| cycle.isWild()) {
 			children.put(Action.FS, new SearchNode(shiftedE, cycle, track,
 					distractorMatrix));
+			actionVisits.put(Action.FS, 1);
 
 			// If cycle is medium or fast speed try shifting again
 			shiftedE = shiftedE.shifted(Direction.E);
@@ -91,6 +96,7 @@ public class SearchNode {
 						|| cycle.isWild()) {
 					children.put(Action.FM, new SearchNode(shiftedE, cycle,
 							track, distractorMatrix));
+					actionVisits.put(Action.FM, 1);
 
 					// If cycle is fast try shifting again
 					shiftedE = shiftedE.shifted(Direction.E);
@@ -99,6 +105,7 @@ public class SearchNode {
 								|| cycle.isWild()) {
 							children.put(Action.FF, new SearchNode(shiftedE,
 									cycle, track, distractorMatrix));
+							actionVisits.put(Action.FF, 1);
 						}
 					}
 				}
@@ -159,24 +166,36 @@ public class SearchNode {
 
 	private SearchNode select() {
 		Action selected = null;
-		double bestValue = Double.MIN_VALUE;
+		
+		//Set the starting value to compare to negative infinity
+		double bestValue = -Double.MAX_VALUE;
 
+		System.out.println("children.keyset = " + children.keySet());
 		// Go over all the possible actions and pick the best one
 		for (Action a : children.keySet()) {
 			SearchNode c = children.get(a);
-			double uctValue =
 			// avg total discounted value of runs starting from here
-			c.getValue() +
-			/* natural log of times visited / times action taken */
-			BALANCING_FACTOR
-					* Math.sqrt(Math.log(c.visits) / (actionVisits.get(a)));
-			// System.out.println("UCT value = " + uctValue);
+			// plus sqrt of nat log(times visited) / times action taken
+			
+			//System.out.println("c.getvalue(): " + c.getValue());
+			//System.out.println("BALANCING_FACTOR: " + BALANCING_FACTOR);
+			//System.out.println("Math.log(c.visits): " + Math.log(c.visits));
+			//System.out.println("Actionvisits.get(a): " + actionVisits.get(a));
+			
+			double uctValue = c.getValue()
+					+ (BALANCING_FACTOR * Math.sqrt(Math.log(c.visits)
+							/ (actionVisits.get(a))));
+			System.out.println("UCT value for " + a + ": " + uctValue);
+			System.out.println("Current best: " + bestValue);
 			if (uctValue > bestValue) {
 				selected = a;
 				bestValue = uctValue;
+				System.out.println("New selected action: " + selected);
 			}
 		}
 		// Increment the action visits
+		System.out.println("old action visits for " + selected + ": "
+				+ actionVisits.get(selected));
 		actionVisits.put(selected, actionVisits.get(selected) + 1);
 
 		return children.get(selected);

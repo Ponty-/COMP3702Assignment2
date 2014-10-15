@@ -29,7 +29,7 @@ public class TourPicker {
 		Set<Track> trackSet = weightedTracks.keySet();
 		Iterator iterT = trackSet.iterator();
 		Track currentTrack;
-		Cycle currentCycle;
+		Cycle currentCycle = null;
 		long timeFactor = findFactor(trackSet, cycleList);
 		// iterates over tracks and checks if any of the cycles are too
 		// expensive to make a profit on the track
@@ -88,8 +88,29 @@ public class TourPicker {
 
 				}
 			}
+
+			// If no cycle was found just pick the last one
+			if (bestCycle == null) {
+				System.out.println("Just picking the last cycle");
+				bestCycle = currentCycle;
+			}
+
+			// If no best starting position was found pick the middle one
+			if (bestNode == null) {
+				System.out.println("Just picking the middle node");
+				bestNode = new SearchNode(new ArrayList<GridCell>(
+						startingPositions.values()).get(startingPositions
+						.values().size() / 2), currentCycle, currentTrack,
+						Consultant.buildDistractorMatrix(currentTrack));
+
+			}
+
 			// store tracks and their best cycle and expected winnings with that
 			// cycle
+			System.out.println("Current track: " + currentTrack);
+			System.out.println("bestCycle: " + bestCycle);
+			System.out.println("bestNode value: " + bestNode.getValue());
+			System.out.println("bestNode cell: " + bestNode.getCell());
 			trackResults.add(new EvaluatedTrack(currentTrack, bestCycle,
 					bestNode.getValue(), bestNode.getCell()));
 		}

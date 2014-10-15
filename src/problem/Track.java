@@ -186,7 +186,11 @@ public class Track {
 	}
 	
 	public CellType getCellType(GridCell pos) {
-		CellType cell = map.get(pos.getRow()).get(pos.getCol());
+		CellType cell = null;
+		try {
+			cell = map.get(pos.getRow()).get(pos.getCol());
+		} catch (IndexOutOfBoundsException e) {
+		}
 		
 		if (cell != null) {
 			return cell;
