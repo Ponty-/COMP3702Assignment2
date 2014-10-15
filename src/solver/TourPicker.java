@@ -88,6 +88,7 @@ public class TourPicker {
 		double maxPrize = 0;
 		double maxCost = tour.getCurrentMoney();
 		double currentPrize = 0;
+		int contcount = 0;
 		//check all combinations of tracks (1,2,3)		
 		for (EvaluatedTrack t : trackCycleArray) {
 			// if this track alone gives more than the current best set it to
@@ -116,15 +117,15 @@ public class TourPicker {
 					continue;
 				}
 				//check if we have already bought the cycle
-				currentCost = currentCost + x.getTrack().getRegistrationFee();
+				currentCost = x.getCycle().getPrice() + t.getTrack().getRegistrationFee() + x.getTrack().getRegistrationFee();
 				if(!x.getCycle().equals(t.getCycle())) {
-					currentCost = currentCost + x.getCycle().getPrice();
+					currentCost = currentCost + t.getCycle().getPrice();
 				} 
 				
 				if(currentCost > maxCost) {
 					continue;
 				}
-				
+				contcount++;
 				
 				if (t.getPrize() + x.getPrize() - currentCost > maxPrize) {
 					trackCombo.clear();
@@ -144,10 +145,12 @@ public class TourPicker {
 						continue;
 					}
 					//check if we have already bought the cycle
-					currentCost = currentCost + y.getTrack().getRegistrationFee();
-					if(!y.getCycle().equals(t.getCycle())) {
-						if(!y.getCycle().equals(x.getCycle())){
-							currentCost = currentCost + y.getTrack().getRegistrationFee();
+					currentCost = y.getCycle().getPrice() + t.getTrack().getRegistrationFee() + 
+							x.getTrack().getRegistrationFee() + y.getTrack().getRegistrationFee();
+					if(!y.getCycle().equals(x.getCycle())) {
+						currentCost = currentCost + x.getCycle().getPrice();
+						if(!y.getCycle().equals(t.getCycle())){
+							currentCost = currentCost + t.getCycle().getPrice();
 						}
 					}
 					
@@ -186,7 +189,7 @@ public class TourPicker {
 			}
 
 		}
-
+		System.err.println(contcount);
 		return output;
 	}
 
