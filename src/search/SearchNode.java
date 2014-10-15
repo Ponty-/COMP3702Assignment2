@@ -228,6 +228,7 @@ public class SearchNode {
 			// Find the action leading to the best child node
 			if (children.get(a).getValue() > bestUtility) {
 				best = a;
+				bestUtility = children.get(a).getValue();
 			}
 		}
 
