@@ -23,11 +23,11 @@ public class TrackRollout {
 	static final private Double DISCOUNT_RATE = 1.0;
 	// The multiplier on the cycles maximum range per step to look ahead for
 	// obstacles, distractors.
-	static final private int LOOK_FACTOR = 3;
+	static final private int LOOK_FACTOR = 2;
 
 	// Reward
 	// Empty cell
-	static final private Double EMPTY = -0.04;
+	static final private Double EMPTY = -0.01;
 	// Distractor Reliable cell
 	static final private Double DISTRACTOR_RELIABLE = -10.0;
 	// Distractor Unreliable cell
